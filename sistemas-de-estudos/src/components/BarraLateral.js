@@ -21,7 +21,9 @@ function BarraLateral() {
           <li>
             <Link to="/materias">Matérias</Link>
           </li>
-
+          <li>
+            <Link to="/usuarios">Usuários/API</Link>
+          </li>
           <li>
             <Link to="/tarefas">Tarefas</Link>
           </li>

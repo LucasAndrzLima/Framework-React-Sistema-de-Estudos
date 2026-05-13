@@ -4,6 +4,7 @@ import Layout from './Layout';
 import Inicio from './pages/Inicio';
 import Materias from './pages/Materias';
 import Tarefas from './pages/Tarefas';
+import Usuarios from './pages/Usuarios';
 
 function Aplicativo() {
   const [temaEscuro, setTemaEscuro] = useState(false);
@@ -15,11 +16,12 @@ function Aplicativo() {
   return (
     <Router>
       <Layout temaEscuro={temaEscuro} alternarTema={alternarTema}>
-        <Routes>
-          <Route path="/" element={<Inicio />} />
-          <Route path="/materias" element={<Materias />} />
-          <Route path="/tarefas" element={<Tarefas />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Inicio />} />
+        <Route path="/materias" element={<Materias />} />
+        <Route path="/tarefas" element={<Tarefas />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+      </Routes>
       </Layout>
     </Router>
   );
