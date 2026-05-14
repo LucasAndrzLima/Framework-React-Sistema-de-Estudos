@@ -2,6 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 function BarraLateral() {
+    const sair = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    window.location.href = '/login';
+  };
   return (
     <aside>
       <div className="sidebar-logo">
@@ -26,6 +31,9 @@ function BarraLateral() {
           </li>
           <li>
             <Link to="/tarefas">Tarefas</Link>
+          </li>
+          <li>
+            <button onClick={sair}>Sair</button>
           </li>
         </ul>
       </nav>

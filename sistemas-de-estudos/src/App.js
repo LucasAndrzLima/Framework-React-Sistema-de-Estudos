@@ -5,6 +5,8 @@ import Inicio from './pages/Inicio';
 import Materias from './pages/Materias';
 import Tarefas from './pages/Tarefas';
 import Usuarios from './pages/Usuarios';
+import Login from './pages/Login';
+import PrivateRoute from './components/PrivateRoute';
 
 function Aplicativo() {
   const [temaEscuro, setTemaEscuro] = useState(false);
@@ -16,12 +18,45 @@ function Aplicativo() {
   return (
     <Router>
       <Layout temaEscuro={temaEscuro} alternarTema={alternarTema}>
-      <Routes>
-        <Route path="/" element={<Inicio />} />
-        <Route path="/materias" element={<Materias />} />
-        <Route path="/tarefas" element={<Tarefas />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-      </Routes>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Inicio />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/materias"
+            element={
+              <PrivateRoute>
+                <Materias />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/tarefas"
+            element={
+              <PrivateRoute>
+                <Tarefas />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/usuarios"
+            element={
+              <PrivateRoute>
+                <Usuarios />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
       </Layout>
     </Router>
   );
