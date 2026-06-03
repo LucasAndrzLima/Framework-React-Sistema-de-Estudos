@@ -1,73 +1,80 @@
-# Sistemas de Estudos
+# Sistema de Estudos - RA2
 
-## Introdução
-Este projeto é uma aplicação React desenvolvida para o gerenciamento de disciplinas e tarefas de estudo. Ele oferece uma interface amigável para que estudantes possam acompanhar seus cursos e trabalhos.
+Aplicacao React para gerenciamento de estudos com foco em interatividade,
+formularios, gerenciamento de estado, consumo de APIs e separacao de
+responsabilidades.
 
-## Configuração do Ambiente
-Antes de começar, certifique-se de ter instalado em sua máquina:
-- **Node.js** (versão 14 ou superior)
-- **npm** (Node Package Manager)
+## O que foi evoluido para o RA2
 
-## Criação do Projeto
-Para criar o projeto, siga estes passos:
+1. Formularios controlados com validacao no login, cadastro de tarefas e perfil.
+2. Gerenciamento de estado centralizado com `AppContext`.
+3. Consumo de API local de autenticacao em `http://localhost:3001/login`.
+4. Consumo de API externa em `https://jsonplaceholder.typicode.com/users`.
+5. Simulacao de dados quando a API externa, a rede ou o backend nao respondem.
+6. Estrutura de services em `src/services`.
+7. Perfil privado com upload de imagem, pre-visualizacao e limite de 1MB.
+8. Responsividade para desktop, tablet e celular.
 
-1. Abra o seu terminal.
-2. Navegue até o diretório onde deseja criar o projeto.
-3. Execute o seguinte comando para criar uma nova aplicação React:
-   ```bash
-   npx create-react-app sistemas-de-estudos
-   ```
-4. Entre no diretório do projeto:
-   ```bash
-   cd sistemas-de-estudos
-   ```
+## Como executar
 
-## Organização do Projeto
-O projeto está organizado na seguinte estrutura:
+### Frontend
 
+```bash
+npm install
+npm start
 ```
+
+### Backend opcional
+
+O backend demonstra a autenticacao real via HTTP. Se ele nao estiver rodando, o
+frontend usa um login simulado com as mesmas credenciais de demonstracao.
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+## Login de demonstracao
+
+- E-mail: `admin@email.com`
+- Senha: `123456`
+
+## Estrutura principal
+
+```bash
 sistemas-de-estudos
-├── public
-│   └── index.html
-├── src
-│   ├── components
-│   ├── pages
-│   ├── Layout.js
-│   ├── App.js
-│   └── index.js
-├── style.css
-├── package.json
-└── .gitignore
+- backend
+  - server.js
+- src
+  - components
+  - context
+  - data
+  - pages
+  - services
+  - App.js
+  - Layout.js
+  - index.js
+  - style.css
+- package.json
 ```
 
-* **public/index.html**: O arquivo HTML principal que serve como ponto de entrada para a aplicação React.
-* **src/components**: Contém componentes reutilizáveis como `CardMateria`, `Header`, `Slidebar` e `TarefaItem`.
-* **src/pages**: Contém os componentes de página, como `Home` e `Materias`.
-* **src/Layout.js**: Define a estrutura geral da aplicação.
-* **src/App.js**: Componente principal da aplicação que configura o roteamento.
-* **src/index.js**: Ponto de entrada (entry point) do React.
+## Justificativa tecnica
 
-## Desenvolvimento de Componentes Reutilizáveis
-A aplicação é construída utilizando componentes reutilizáveis para promover a modularidade e a manutenibilidade. Cada componente é responsável por uma parte específica da interface (UI), facilitando o gerenciamento e as atualizações.
+- `AppContext` concentra estado global de autenticacao, tema, perfil e tarefas.
+- `localStorage` mantem a persistencia simples sem exigir banco de dados.
+- `services` separam as chamadas HTTP dos componentes visuais.
+- `authService` tenta a API local e usa fallback simulado para nao travar a apresentacao.
+- `userService` consome API externa e tambem retorna dados simulados se a rede falhar.
+- Formularios controlados com validacao melhoram usabilidade e previsibilidade.
+- Rotas privadas protegem as paginas internas apos o login.
+- CSS responsivo garante uso adequado em telas menores.
 
-## Roteamento Inicial e Estrutura de Layout
-A aplicação utiliza o **React Router** para a navegação entre as diferentes páginas. O componente `Layout` inclui o `Header` e o `Slidebar`, proporcionando um layout consistente em todas as páginas.
+## Pergunta tecnica possivel
 
-## Boas Práticas de Organização de Código Inicial
-* Mantenha os componentes pequenos e focados em uma única responsabilidade.
-* Use nomes significativos para componentes e arquivos.
-* Organize os arquivos de forma que reflitam a estrutura da aplicação.
-* Mantenha um estilo de codificação consistente e siga as melhores práticas de desenvolvimento em React.
+**Por que separar chamadas de API em services em vez de usar `fetch` direto nas paginas?**
 
-## Como Começar
-Para executar a aplicação, siga estes passos:
-
-1. Instale as dependências:
-   ```bash
-   npm install
-   ```
-2. Inicie o servidor de desenvolvimento:
-   ```bash
-   npm start
-   ```
-3. Abra o seu navegador e acesse `http://localhost:3000` para visualizar a aplicação.
+Porque a pagina fica responsavel pela interface e pelos eventos do usuario,
+enquanto o service fica responsavel pela comunicacao externa. Isso reduz
+duplicacao, facilita manutencao, permite trocar API real por dados simulados e
+deixa o codigo mais testavel.

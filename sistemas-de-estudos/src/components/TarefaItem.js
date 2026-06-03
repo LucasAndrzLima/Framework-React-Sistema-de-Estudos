@@ -2,20 +2,21 @@ import React from 'react';
 
 function TarefaItem({ titulo, descricao, materia, onDelete }) {
   return (
-    <div className="card">
-      <h3>{titulo}</h3>
+    <div className="card tarefa-card">
+      <div className="tarefa-topo">
+        <span className="tag-materia">{materia}</span>
+        <h3>{titulo}</h3>
+      </div>
 
-      <p style={{ margin: '10px 0' }}>
+      <p className="texto-tarefa">
         {descricao}
       </p>
 
-      <p>
-        <strong>Matéria:</strong> {materia}
-      </p>
-
-      <button onClick={onDelete}>
-        Concluir
-      </button>
+      <div className="tarefa-acoes">
+        <button type="button" onClick={onDelete}>
+          Concluir
+        </button>
+      </div>
     </div>
   );
 }

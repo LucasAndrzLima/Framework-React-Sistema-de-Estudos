@@ -1,23 +1,22 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import Cabecalho from './components/Cabecalho';
 import BarraLateral from './components/BarraLateral';
+import { useAppContext } from './context/AppContext';
 
-function Layout({ children, temaEscuro, alternarTema }) {
+function Layout({ children }) {
+  const location = useLocation();
+  const { temaEscuro } = useAppContext();
+  const paginaLogin = location.pathname === '/login';
+
   return (
     <div className={temaEscuro ? 'tema-escuro' : 'tema-claro'}>
       <Cabecalho />
 
-      <div className="conteudo-layout">
-        <BarraLateral />
+      <div className={paginaLogin ? 'conteudo-login' : 'conteudo-layout'}>
+        {!paginaLogin && <BarraLateral />}
 
-        <main>
-          <button
-            onClick={alternarTema}
-            style={{ marginBottom: '30px' }}
-          >
-            Alternar para {temaEscuro ? 'Tema Claro' : 'Tema Escuro'}
-          </button>
-
+        <main className={paginaLogin ? 'main-login' : 'main-conteudo'}>
           {children}
         </main>
       </div>

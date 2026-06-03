@@ -1,134 +1,163 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import TarefaItem from '../components/TarefaItem';
+import { useAppContext } from '../context/AppContext';
+
+function validarTarefa(novaTarefa) {
+  const novosErros = {};
+
+  if (!novaTarefa.titulo.trim()) {
+    novosErros.titulo = 'Informe o titulo da tarefa.';
+  } else if (novaTarefa.titulo.trim().length < 3) {
+    novosErros.titulo = 'O titulo precisa ter pelo menos 3 caracteres.';
+  }
+
+  if (!novaTarefa.descricao.trim()) {
+    novosErros.descricao = 'Informe a descricao da tarefa.';
+  } else if (novaTarefa.descricao.trim().length < 10) {
+    novosErros.descricao = 'A descricao precisa ter pelo menos 10 caracteres.';
+  }
+
+  if (!novaTarefa.materia.trim()) {
+    novosErros.materia = 'Selecione uma materia.';
+  }
+
+  return novosErros;
+}
 
 function Tarefas() {
-  const tarefasIniciais = [
-    { id: 1, titulo: 'Estudar React', descricao: 'Revisar componentes, props e hooks', materia: 'Programação' },
-    { id: 2, titulo: 'Fazer exercícios de matemática', descricao: 'Resolver 10 questões de álgebra', materia: 'Matemática' },
-    { id: 3, titulo: 'Ler capítulo de História', descricao: 'Estudar Revolução Industrial', materia: 'História' },
-    { id: 4, titulo: 'Praticar inglês', descricao: 'Treinar vocabulário por 20 minutos', materia: 'Inglês' },
-    { id: 5, titulo: 'Revisar CSS', descricao: 'Estudar flexbox, grid e responsividade', materia: 'Programação' },
-    { id: 6, titulo: 'Fazer resumo de Biologia', descricao: 'Criar resumo sobre células', materia: 'Biologia' },
-    { id: 7, titulo: 'Organizar caderno', descricao: 'Separar anotações por matéria', materia: 'Organização' },
-    { id: 8, titulo: 'Estudar JavaScript', descricao: 'Revisar funções, arrays e objetos', materia: 'Programação' },
-  ];
-
-  const [tarefas, setTarefas] = useState(() => {
-    const tarefasSalvas = localStorage.getItem('tarefas');
-
-    if (tarefasSalvas) {
-      return JSON.parse(tarefasSalvas);
-    }
-
-    return tarefasIniciais;
-  });
-
-  const [tarefasConcluidas, setTarefasConcluidas] = useState(() => {
-    const concluidasSalvas = localStorage.getItem('tarefasConcluidas');
-
-    if (concluidasSalvas) {
-      return JSON.parse(concluidasSalvas);
-    }
-
-    return [];
-  });
-
+  const {
+    adicionarTarefa,
+    concluirTarefa,
+    materias,
+    tarefas,
+    tarefasConcluidas,
+  } = useAppContext();
   const [novaTarefa, setNovaTarefa] = useState({
     titulo: '',
     descricao: '',
-    materia: 'Matemática',
+    materia: materias[0],
   });
+  const [erros, setErros] = useState({});
+  const [mensagem, setMensagem] = useState('');
 
-  useEffect(() => {
-    localStorage.setItem('tarefas', JSON.stringify(tarefas));
-  }, [tarefas]);
+  const atualizarCampo = ({ target }) => {
+    const { name, value } = target;
 
-  useEffect(() => {
-    localStorage.setItem('tarefasConcluidas', JSON.stringify(tarefasConcluidas));
-  }, [tarefasConcluidas]);
+    setNovaTarefa((valorAtual) => ({
+      ...valorAtual,
+      [name]: value,
+    }));
+    setErros((valorAtual) => ({
+      ...valorAtual,
+      [name]: '',
+    }));
+    setMensagem('');
+  };
 
-  const adicionarTarefa = () => {
-    if (
-      novaTarefa.titulo.trim() === '' ||
-      novaTarefa.descricao.trim() === '' ||
-      novaTarefa.materia.trim() === ''
-    ) {
-      alert('Preencha o título, a descrição e a matéria da tarefa.');
+  const enviarFormulario = (evento) => {
+    evento.preventDefault();
+
+    const errosEncontrados = validarTarefa(novaTarefa);
+
+    if (Object.keys(errosEncontrados).length > 0) {
+      setErros(errosEncontrados);
+      setMensagem('');
       return;
     }
 
-    const tarefaCriada = {
-      id: Date.now(),
-      titulo: novaTarefa.titulo,
-      descricao: novaTarefa.descricao,
+    adicionarTarefa({
+      titulo: novaTarefa.titulo.trim(),
+      descricao: novaTarefa.descricao.trim(),
       materia: novaTarefa.materia,
-    };
-
-    setTarefas([...tarefas, tarefaCriada]);
+    });
 
     setNovaTarefa({
       titulo: '',
       descricao: '',
-      materia: 'Matemática',
+      materia: materias[0],
     });
-  };
-
-  const concluirTarefa = (id) => {
-    const tarefaConcluida = tarefas.find((tarefa) => tarefa.id === id);
-
-    if (!tarefaConcluida) {
-      return;
-    }
-
-    setTarefasConcluidas([...tarefasConcluidas, tarefaConcluida]);
-    setTarefas(tarefas.filter((tarefa) => tarefa.id !== id));
+    setErros({});
+    setMensagem('Tarefa adicionada com sucesso.');
   };
 
   return (
     <div>
       <h1>Tarefas</h1>
+      <p className="texto-apoio">
+        O formulario valida os campos antes de atualizar o estado compartilhado da aplicacao.
+      </p>
 
-      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Título da tarefa"
-          value={novaTarefa.titulo}
-          onChange={(e) =>
-            setNovaTarefa({ ...novaTarefa, titulo: e.target.value })
-          }
-        />
+      <div className="grid-duplo">
+        <div className="card">
+          <h2>Nova tarefa</h2>
 
-        <input
-          type="text"
-          placeholder="Descrição da tarefa"
-          value={novaTarefa.descricao}
-          onChange={(e) =>
-            setNovaTarefa({ ...novaTarefa, descricao: e.target.value })
-          }
-        />
+          <form className="formulario" onSubmit={enviarFormulario}>
+            <div className="campo-formulario">
+              <label htmlFor="titulo">Titulo</label>
+              <input
+                id="titulo"
+                name="titulo"
+                type="text"
+                placeholder="Ex.: Revisar funcoes em JavaScript"
+                value={novaTarefa.titulo}
+                onChange={atualizarCampo}
+              />
+              {erros.titulo && <span className="erro-campo">{erros.titulo}</span>}
+            </div>
 
-        <select
-          value={novaTarefa.materia}
-          onChange={(e) =>
-            setNovaTarefa({ ...novaTarefa, materia: e.target.value })
-          }
-        >
-          <option value="Matemática">Matemática</option>
-          <option value="História">História</option>
-          <option value="Inglês">Inglês</option>
-          <option value="Biologia">Biologia</option>
-          <option value="Programação">Programação</option>
-          <option value="Organização">Organização</option>
-        </select>
+            <div className="campo-formulario">
+              <label htmlFor="descricao">Descricao</label>
+              <textarea
+                id="descricao"
+                name="descricao"
+                placeholder="Descreva o que precisa ser feito"
+                value={novaTarefa.descricao}
+                onChange={atualizarCampo}
+              />
+              {erros.descricao && (
+                <span className="erro-campo">{erros.descricao}</span>
+              )}
+            </div>
 
-        <button onClick={adicionarTarefa}>
-          Adicionar Tarefa
-        </button>
+            <div className="campo-formulario">
+              <label htmlFor="materia">Materia</label>
+              <select
+                id="materia"
+                name="materia"
+                value={novaTarefa.materia}
+                onChange={atualizarCampo}
+              >
+                {materias.map((materia) => (
+                  <option key={materia} value={materia}>
+                    {materia}
+                  </option>
+                ))}
+              </select>
+              {erros.materia && <span className="erro-campo">{erros.materia}</span>}
+            </div>
+
+            {mensagem && <p className="sucesso-geral">{mensagem}</p>}
+
+            <button type="submit">Adicionar tarefa</button>
+          </form>
+        </div>
+
+        <div className="card">
+          <h2>Resumo rapido</h2>
+          <div className="lista-status">
+            <div className="status-item">
+              <strong>Pendentes:</strong> {tarefas.length}
+            </div>
+            <div className="status-item">
+              <strong>Concluidas:</strong> {tarefasConcluidas.length}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div>
         {tarefas.length === 0 ? (
-          <p>Nenhuma tarefa disponível.</p>
+          <p>Nenhuma tarefa disponivel.</p>
         ) : (
           tarefas.map((tarefa) => (
             <TarefaItem

@@ -19,7 +19,7 @@ app.post('/login', (req, res) => {
   const { email, senha } = req.body;
 
   if (email !== usuarioFake.email || senha !== usuarioFake.senha) {
-    return res.status(401).json({ erro: 'Usuário inválido' });
+    return res.status(401).json({ erro: 'Usuario invalido' });
   }
 
   const token = jwt.sign(
@@ -28,7 +28,7 @@ app.post('/login', (req, res) => {
     { expiresIn: '1h' }
   );
 
-  res.json({ token, nome: usuarioFake.nome });
+  res.json({ token, nome: usuarioFake.nome, origem: 'api-local' });
 });
 
 app.listen(3001, () => {

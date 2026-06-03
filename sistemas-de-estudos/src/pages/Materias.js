@@ -1,18 +1,9 @@
 import React from 'react';
 import CartaoMateria from '../components/CartaoMateria';
+import { useAppContext } from '../context/AppContext';
 
 function Materias() {
-  const tarefas = JSON.parse(localStorage.getItem('tarefas')) || [];
-  const tarefasConcluidas = JSON.parse(localStorage.getItem('tarefasConcluidas')) || [];
-
-  const materias = [
-    'Matemática',
-    'História',
-    'Inglês',
-    'Biologia',
-    'Programação',
-    'Organização',
-  ];
+  const { materias, tarefas, tarefasConcluidas } = useAppContext();
 
   const calcularProgresso = (materia) => {
     const tarefasPendentesDaMateria = tarefas.filter(
@@ -35,7 +26,10 @@ function Materias() {
 
   return (
     <div>
-      <h1>Matérias</h1>
+      <h1>Materias</h1>
+      <p className="texto-apoio">
+        O progresso e atualizado automaticamente a partir do estado compartilhado das tarefas.
+      </p>
 
       {materias.map((materia) => (
         <CartaoMateria

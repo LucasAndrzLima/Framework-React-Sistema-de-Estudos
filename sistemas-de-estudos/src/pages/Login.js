@@ -1,66 +1,131 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
+
+function validarFormulario({ email, senha }) {
+  const novosErros = {};
+
+  if (!email.trim()) {
+    novosErros.email = 'Informe o e-mail.';
+  } else if (!/\S+@\S+\.\S+/.test(email)) {
+    novosErros.email = 'Digite um e-mail valido.';
+  }
+
+  if (!senha.trim()) {
+    novosErros.senha = 'Informe a senha.';
+  } else if (senha.trim().length < 6) {
+    novosErros.senha = 'A senha deve ter pelo menos 6 caracteres.';
+  }
+
+  return novosErros;
+}
 
 function Login() {
-  const [email, setEmail] = useState('admin@email.com');
-  const [senha, setSenha] = useState('123456');
-
+  const { entrar, estaAutenticado } = useAppContext();
   const navigate = useNavigate();
+  const [formulario, setFormulario] = useState({
+    email: 'admin@email.com',
+    senha: '123456',
+  });
+  const [erros, setErros] = useState({});
+  const [erroGeral, setErroGeral] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  async function fazerLogin() {
+  async function fazerLogin(evento) {
+    evento.preventDefault();
+
+    const errosEncontrados = validarFormulario(formulario);
+
+    if (Object.keys(errosEncontrados).length > 0) {
+      setErros(errosEncontrados);
+      setErroGeral('');
+      return;
+    }
+
+    setCarregando(true);
+    setErroGeral('');
+
     try {
-      const resposta = await fetch('http://localhost:3001/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, senha }),
-      });
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        alert(dados.erro);
-        localStorage.removeItem('token');
-        return;
-      }
-
-      localStorage.setItem('token', dados.token);
-      localStorage.setItem('usuario', dados.nome);
-
+      await entrar(formulario);
       navigate('/');
     } catch (erro) {
-      alert('Erro ao conectar com o servidor.');
-      console.log(erro);
+      setErroGeral(erro.message || 'Erro ao conectar com o servidor.');
+    } finally {
+      setCarregando(false);
     }
+  }
+
+  if (estaAutenticado) {
+    return <Navigate to="/" replace />;
   }
 
   return (
     <div className="login-container">
       <div className="card login-card">
         <h1>Login</h1>
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-        />
-
-        <button onClick={fazerLogin}>
-          Entrar
-        </button>
-
-        <p style={{ marginTop: '15px' }}>
-          Use: admin@email.com / 123456
+        <p className="texto-apoio">
+          Acesso autenticado pela API local, com modo simulado caso o backend nao esteja aberto.
         </p>
+
+        <form className="formulario" onSubmit={fazerLogin}>
+          <div className="campo-formulario">
+            <label htmlFor="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Digite seu e-mail"
+              value={formulario.email}
+              onChange={(evento) => {
+                const { name, value } = evento.target;
+
+                setFormulario((valorAtual) => ({
+                  ...valorAtual,
+                  [name]: value,
+                }));
+                setErros((valorAtual) => ({
+                  ...valorAtual,
+                  [name]: '',
+                }));
+                setErroGeral('');
+              }}
+            />
+            {erros.email && <span className="erro-campo">{erros.email}</span>}
+          </div>
+
+          <div className="campo-formulario">
+            <label htmlFor="senha">Senha</label>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              placeholder="Digite sua senha"
+              value={formulario.senha}
+              onChange={(evento) => {
+                const { name, value } = evento.target;
+
+                setFormulario((valorAtual) => ({
+                  ...valorAtual,
+                  [name]: value,
+                }));
+                setErros((valorAtual) => ({
+                  ...valorAtual,
+                  [name]: '',
+                }));
+                setErroGeral('');
+              }}
+            />
+            {erros.senha && <span className="erro-campo">{erros.senha}</span>}
+          </div>
+
+          {erroGeral && <p className="erro-geral">{erroGeral}</p>}
+
+          <button type="submit" disabled={carregando}>
+            {carregando ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+
+        <p className="dica-formulario">Use: admin@email.com / 123456</p>
       </div>
     </div>
   );

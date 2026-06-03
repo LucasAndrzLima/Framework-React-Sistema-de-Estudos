@@ -1,8 +1,8 @@
 import React from 'react';
+import { useAppContext } from '../context/AppContext';
 
 function Inicio() {
-  const tarefas = JSON.parse(localStorage.getItem('tarefas')) || [];
-  const tarefasConcluidas = JSON.parse(localStorage.getItem('tarefasConcluidas')) || [];
+  const { perfil, tarefas, tarefasConcluidas, usuario } = useAppContext();
 
   const totalPendentes = tarefas.length;
   const totalConcluidas = tarefasConcluidas.length;
@@ -15,19 +15,37 @@ function Inicio() {
 
   return (
     <div>
-      <h1>Página Inicial</h1>
-      <div className="logo-central">
-  <img
-    src="/logo.png"
-    alt="Logo do sistema"
-  />
-</div>
+      <div className="pagina-cabecalho">
+        <div>
+          <h1>Pagina Inicial</h1>
+          <p className="texto-apoio">
+            Ola, {perfil.nome || usuario}. Acompanhe seu progresso e as integracoes do projeto.
+          </p>
+        </div>
+
+        {perfil.imagem ? (
+          <img
+            src={perfil.imagem}
+            alt={`Foto de perfil de ${perfil.nome || usuario}`}
+            className="avatar-inicio"
+          />
+        ) : (
+          <div className="logo-central">
+            <img
+              src="/logo.png"
+              alt="Logo do sistema"
+            />
+          </div>
+        )}
+      </div>
+
       <div className="card destaque-inicio">
         <h2>Bem-vindo ao Sistema de Estudos</h2>
         <p>
-          Aqui você pode organizar suas matérias, acompanhar tarefas pendentes
-          e visualizar seu progresso de estudo.
+          Aqui voce pode organizar suas materias, cadastrar tarefas com validacao,
+          manter um perfil privado com imagem e consumir servicos externos.
         </p>
+        {perfil.objetivo && <p className="texto-apoio">Objetivo atual: {perfil.objetivo}</p>}
       </div>
 
       <div className="cards-resumo">
@@ -37,7 +55,7 @@ function Inicio() {
         </div>
 
         <div className="card card-resumo">
-          <h3>Tarefas concluídas</h3>
+          <h3>Tarefas concluidas</h3>
           <p>{totalConcluidas}</p>
         </div>
 
@@ -57,9 +75,34 @@ function Inicio() {
           ></div>
         </div>
 
-        <p style={{ marginTop: '10px' }}>
-          {progressoGeral}% das tarefas foram concluídas.
+        <p className="texto-apoio">
+          {progressoGeral}% das tarefas foram concluidas.
         </p>
+      </div>
+
+      <div className="grid-duplo">
+        <div className="card">
+          <h2>Integracoes da aplicacao</h2>
+          <div className="lista-status">
+            <div className="status-item">
+              <strong>API 1:</strong> Login autenticado em <code>localhost:3001/login</code>
+            </div>
+            <div className="status-item">
+              <strong>API 2:</strong> Usuarios externos em <code>jsonplaceholder.typicode.com/users</code>
+            </div>
+            <div className="status-item">
+              <strong>Fallback:</strong> dados simulados quando API ou rede nao respondem.
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Rota privada de perfil</h2>
+          <p>
+            Na pagina de perfil e possivel validar campos, enviar uma imagem de ate 1MB
+            e salvar os dados localmente para reutilizar na navegacao.
+          </p>
+        </div>
       </div>
     </div>
   );
