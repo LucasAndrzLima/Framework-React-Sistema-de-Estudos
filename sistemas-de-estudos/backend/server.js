@@ -17,9 +17,24 @@ const PORTA = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'segredo_ra3_apenas_desenvolvimento';
 const PASTA_UPLOADS = path.join(__dirname, 'uploads');
 
+// Em desenvolvimento o React pode escolher outra porta se 3000 estiver ocupada
+// (por exemplo 3001 ou 3002). Aceitamos somente origens locais, em qualquer porta.
+const corsLocal = {
+  origin(origem, callback) {
+    const origemLocal =
+      !origem || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origem);
+
+    if (origemLocal) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Origem nao permitida pelo CORS.'));
+  },
+};
+
 // Remove um header que revela a tecnologia usada pelo servidor.
 app.disable('x-powered-by');
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors(corsLocal));
 app.use(express.json({ limit: '1mb' }));
 app.use('/uploads', express.static(PASTA_UPLOADS));
 
