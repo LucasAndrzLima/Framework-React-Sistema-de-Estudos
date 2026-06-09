@@ -65,6 +65,14 @@ function BarraLateral() {
             </NavLink>
           </li>
           <li>
+            <NavLink
+              to="/planejamento"
+              className={({ isActive }) => (isActive ? 'nav-link ativo' : 'nav-link')}
+            >
+              Planejamento/Clima
+            </NavLink>
+          </li>
+          <li>
             <button
               type="button"
               className="botao-secundario botao-bloco"

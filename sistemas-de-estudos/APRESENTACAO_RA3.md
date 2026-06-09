@@ -68,6 +68,26 @@ negocio. Salvar o arquivo separado e guardar apenas o caminho e mais organizado.
 - pre-visualizacao antes do upload;
 - responsividade e tema claro/escuro.
 
+## Duas APIs externas
+
+**Quais APIs externas o projeto consome?**
+
+1. JSONPlaceholder: fornece uma lista de usuarios para demonstrar consumo,
+   carregamento, busca e tratamento de falha.
+2. Open-Meteo: fornece clima atual e previsao para Curitiba, usada na pagina de
+   planejamento.
+
+**Por que as chamadas estao em services?**
+
+Cada service concentra URL, parametros e transformacao dos dados de uma API.
+Assim a pagina cuida da interface e pode trocar o provedor sem espalhar `fetch`
+por varios componentes.
+
+**A API do backend conta como uma das duas APIs externas?**
+
+Nao. O Express faz parte do proprio projeto. As duas externas sao servicos de
+terceiros: JSONPlaceholder e Open-Meteo.
+
 ## Pergunta aprofundada
 
 **O que mudaria para colocar em producao?**

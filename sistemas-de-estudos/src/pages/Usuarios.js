@@ -33,12 +33,16 @@ function Usuarios() {
 
   return (
     <div>
-      <h1>Usuarios da API</h1>
+      <div className="pagina-titulo">
+        <div>
+          <h1>Usuarios da API</h1>
 
-      <p className="texto-apoio">
-        Esta pagina consome uma API externa por meio da camada de servicos e filtra
-        os resultados pelo formulario de busca.
-      </p>
+          <p className="texto-apoio">
+            Consumo externo com busca por nome, e-mail, empresa ou cidade.
+          </p>
+        </div>
+        <span className="selo-seguranca">API externa 1: JSONPlaceholder</span>
+      </div>
 
       <div className="card">
         <form

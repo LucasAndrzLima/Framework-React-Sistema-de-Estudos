@@ -36,6 +36,18 @@ JSON, autenticacao JWT, upload de imagem e interface responsiva.
 - Layout responsivo para desktop, tablet e celular.
 - Indicadores visuais de persistencia e rota protegida.
 
+### APIs externas
+
+1. **JSONPlaceholder** em `https://jsonplaceholder.typicode.com/users`
+   - Carrega usuarios externos.
+   - Permite filtrar por nome, e-mail, empresa e cidade.
+2. **Open-Meteo** em `https://api.open-meteo.com/v1/forecast`
+   - Carrega clima atual e previsao de quatro dias para Curitiba.
+   - Exibe temperatura, sensacao, vento e chance de chuva.
+   - Ajuda o estudante a decidir entre estudar em casa ou no campus.
+
+As chamadas ficam separadas em `userService.js` e `weatherService.js`.
+
 ## Como executar
 
 Abra dois terminais dentro de `sistemas-de-estudos`.
@@ -81,6 +93,9 @@ O frontend ficara em `http://localhost:3000`.
 | PUT | `/api/perfil` | Sim | Atualizar dados do perfil |
 | POST | `/api/perfil/imagem` | Sim | Fazer upload da imagem |
 
+As rotas acima pertencem ao backend do projeto. Elas nao contam como APIs
+externas; as duas integracoes externas sao JSONPlaceholder e Open-Meteo.
+
 ## Estrutura
 
 ```text
@@ -93,7 +108,7 @@ src/
   components/        componentes reutilizaveis
   context/           estado compartilhado e integracao
   pages/             telas da aplicacao
-  services/          HTTP, autenticacao, estudos e storage
+  services/          HTTP, autenticacao, estudos, clima, usuarios e storage
 ```
 
 ## Variavel de seguranca

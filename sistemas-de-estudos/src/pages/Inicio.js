@@ -92,6 +92,9 @@ function Inicio() {
               <strong>API 2:</strong> Usuarios externos em <code>jsonplaceholder.typicode.com/users</code>
             </div>
             <div className="status-item">
+              <strong>API 3:</strong> Previsao do tempo em <code>api.open-meteo.com</code>
+            </div>
+            <div className="status-item">
               <strong>Persistencia:</strong> tarefas e perfil salvos no backend em arquivo JSON.
             </div>
           </div>

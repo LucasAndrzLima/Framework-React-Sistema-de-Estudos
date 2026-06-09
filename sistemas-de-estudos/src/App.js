@@ -7,6 +7,7 @@ import Tarefas from './pages/Tarefas';
 import Usuarios from './pages/Usuarios';
 import Login from './pages/Login';
 import Perfil from './pages/Perfil';
+import Planejamento from './pages/Planejamento';
 import PrivateRoute from './components/PrivateRoute';
 
 function Aplicativo() {
@@ -57,6 +58,15 @@ function Aplicativo() {
             element={
               <PrivateRoute>
                 <Usuarios />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/planejamento"
+            element={
+              <PrivateRoute>
+                <Planejamento />
               </PrivateRoute>
             }
           />
