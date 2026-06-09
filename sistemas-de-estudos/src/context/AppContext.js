@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { MATERIAS, PERFIL_INICIAL, TAREFAS_INICIAIS } from '../data/estudos';
-import { autenticarUsuario } from '../services/authService';
+import { autenticarUsuario, validarSessao } from '../services/authService';
+import {
+  atualizarPerfil,
+  buscarDadosDeEstudo,
+  criarTarefa,
+  enviarImagemPerfil,
+  finalizarTarefa,
+} from '../services/studyService';
+import { API_URL } from '../services/apiService';
 import {
   lerJson,
   lerTexto,
@@ -9,106 +16,110 @@ import {
   salvarTexto,
 } from '../services/storageService';
 
-const CHAVES_STORAGE = {
-  temaEscuro: 'temaEscuro',
-  token: 'token',
-  usuario: 'usuario',
-  usuarioEmail: 'usuarioEmail',
-  tarefas: 'tarefas',
-  tarefasConcluidas: 'tarefasConcluidas',
-  perfil: 'perfil',
-};
-
 const AppContext = createContext(null);
+const MATERIAS_PADRAO = ['Matematica', 'Historia', 'Ingles', 'Biologia', 'Programacao'];
 
-function montarPerfilInicial(nome, email) {
+function normalizarPerfil(perfil) {
+  if (!perfil) {
+    return {
+      nome: '',
+      email: '',
+      objetivo: '',
+      materiaFavorita: MATERIAS_PADRAO[0],
+      imagem: '',
+    };
+  }
+
   return {
-    ...PERFIL_INICIAL,
-    nome: nome || '',
-    email: email || '',
+    ...perfil,
+    // O backend salva somente o caminho. O navegador precisa da URL completa.
+    imagem:
+      perfil.imagem && perfil.imagem.startsWith('/')
+        ? `${API_URL}${perfil.imagem}`
+        : perfil.imagem || '',
   };
 }
 
 export function AppProvider({ children }) {
+  // Tema e token continuam locais: tema e preferencia visual; token identifica a sessao.
   const [temaEscuro, setTemaEscuro] = useState(() =>
-    lerJson(CHAVES_STORAGE.temaEscuro, false)
+    lerJson('temaEscuro', false)
   );
-  const [token, setToken] = useState(() => lerTexto(CHAVES_STORAGE.token));
-  const [usuario, setUsuario] = useState(() => lerTexto(CHAVES_STORAGE.usuario));
-  const [usuarioEmail, setUsuarioEmail] = useState(() =>
-    lerTexto(CHAVES_STORAGE.usuarioEmail)
-  );
-  const [tarefas, setTarefas] = useState(() =>
-    lerJson(CHAVES_STORAGE.tarefas, TAREFAS_INICIAIS)
-  );
-  const [tarefasConcluidas, setTarefasConcluidas] = useState(() =>
-    lerJson(CHAVES_STORAGE.tarefasConcluidas, [])
-  );
-  const [perfil, setPerfil] = useState(() => {
-    const perfilSalvo = lerJson(CHAVES_STORAGE.perfil, null);
-    const perfilBase = montarPerfilInicial(
-      lerTexto(CHAVES_STORAGE.usuario),
-      lerTexto(CHAVES_STORAGE.usuarioEmail)
-    );
+  const [token, setToken] = useState(() => lerTexto('token'));
+  const [usuario, setUsuario] = useState(null);
 
-    if (perfilSalvo) {
-      return {
-        ...perfilBase,
-        ...perfilSalvo,
-        email: perfilBase.email || perfilSalvo.email || '',
-      };
-    }
-
-    return perfilBase;
-  });
+  // Dados de dominio agora sao carregados e persistidos pelo backend.
+  const [materias, setMaterias] = useState(MATERIAS_PADRAO);
+  const [tarefas, setTarefas] = useState([]);
+  const [tarefasConcluidas, setTarefasConcluidas] = useState([]);
+  const [perfil, setPerfil] = useState(() => normalizarPerfil(null));
+  const [inicializando, setInicializando] = useState(Boolean(token));
+  const [erroGlobal, setErroGlobal] = useState('');
 
   useEffect(() => {
-    salvarJson(CHAVES_STORAGE.temaEscuro, temaEscuro);
+    salvarJson('temaEscuro', temaEscuro);
   }, [temaEscuro]);
 
   useEffect(() => {
     if (token) {
-      salvarTexto(CHAVES_STORAGE.token, token);
-      return;
+      salvarTexto('token', token);
+    } else {
+      removerItem('token');
     }
-
-    removerItem(CHAVES_STORAGE.token);
   }, [token]);
 
+  const limparSessao = () => {
+    setToken('');
+    setUsuario(null);
+    setTarefas([]);
+    setTarefasConcluidas([]);
+    setPerfil(normalizarPerfil(null));
+  };
+
+  const carregarDados = async () => {
+    const dados = await buscarDadosDeEstudo();
+    setMaterias(dados.materias);
+    setTarefas(dados.tarefas);
+    setTarefasConcluidas(dados.tarefasConcluidas);
+    setPerfil(normalizarPerfil(dados.perfil));
+  };
+
+  // Ao atualizar a pagina, validamos o JWT no backend antes de aceitar a sessao.
   useEffect(() => {
-    if (usuario) {
-      salvarTexto(CHAVES_STORAGE.usuario, usuario);
+    if (!token) {
+      setInicializando(false);
       return;
     }
 
-    removerItem(CHAVES_STORAGE.usuario);
-  }, [usuario]);
+    let ativo = true;
 
-  useEffect(() => {
-    if (usuarioEmail) {
-      salvarTexto(CHAVES_STORAGE.usuarioEmail, usuarioEmail);
-      return;
+    async function restaurarSessao() {
+      try {
+        const sessao = await validarSessao();
+        const dados = await buscarDadosDeEstudo();
+
+        if (!ativo) return;
+
+        setUsuario(sessao.usuario);
+        setMaterias(dados.materias);
+        setTarefas(dados.tarefas);
+        setTarefasConcluidas(dados.tarefasConcluidas);
+        setPerfil(normalizarPerfil(dados.perfil));
+      } catch (erro) {
+        if (ativo) {
+          limparSessao();
+          setErroGlobal(erro.message);
+        }
+      } finally {
+        if (ativo) setInicializando(false);
+      }
     }
 
-    removerItem(CHAVES_STORAGE.usuarioEmail);
-  }, [usuarioEmail]);
-
-  useEffect(() => {
-    salvarJson(CHAVES_STORAGE.tarefas, tarefas);
-  }, [tarefas]);
-
-  useEffect(() => {
-    salvarJson(CHAVES_STORAGE.tarefasConcluidas, tarefasConcluidas);
-  }, [tarefasConcluidas]);
-
-  useEffect(() => {
-    setPerfil((perfilAtual) => ({
-      ...montarPerfilInicial(usuario, usuarioEmail),
-      ...perfilAtual,
-      nome: perfilAtual.nome || usuario,
-      email: usuarioEmail,
-    }));
-  }, [usuario, usuarioEmail]);
+    restaurarSessao();
+    return () => {
+      ativo = false;
+    };
+  }, [token]);
 
   const alternarTema = () => {
     setTemaEscuro((valorAtual) => !valorAtual);
@@ -117,59 +128,47 @@ export function AppProvider({ children }) {
   const entrar = async ({ email, senha }) => {
     const dados = await autenticarUsuario({ email, senha });
 
+    // Salvamos o token antes da proxima chamada porque apiService o le do localStorage.
+    salvarTexto('token', dados.token);
     setToken(dados.token);
-    setUsuario(dados.nome);
-    setUsuarioEmail(email);
+    setUsuario(dados.usuario);
+    setErroGlobal('');
 
-    return dados;
+    const estudos = await buscarDadosDeEstudo();
+    setMaterias(estudos.materias);
+    setTarefas(estudos.tarefas);
+    setTarefasConcluidas(estudos.tarefasConcluidas);
+    setPerfil(normalizarPerfil(estudos.perfil));
   };
 
   const sair = () => {
-    setToken('');
-    setUsuario('');
-    setUsuarioEmail('');
+    limparSessao();
+    setErroGlobal('');
   };
 
-  const adicionarTarefa = ({ titulo, descricao, materia }) => {
-    const tarefaCriada = {
-      id: Date.now(),
-      titulo,
-      descricao,
-      materia,
-    };
-
-    setTarefas((tarefasAtuais) => [...tarefasAtuais, tarefaCriada]);
-
-    return tarefaCriada;
+  const adicionarTarefa = async (dadosTarefa) => {
+    const resposta = await criarTarefa(dadosTarefa);
+    setTarefas((atuais) => [...atuais, resposta.tarefa]);
+    return resposta.tarefa;
   };
 
-  const concluirTarefa = (id) => {
-    setTarefas((tarefasAtuais) => {
-      const tarefaConcluida = tarefasAtuais.find((tarefa) => tarefa.id === id);
-
-      if (!tarefaConcluida) {
-        return tarefasAtuais;
-      }
-
-      setTarefasConcluidas((tarefasFinalizadas) => [
-        ...tarefasFinalizadas,
-        tarefaConcluida,
-      ]);
-
-      return tarefasAtuais.filter((tarefa) => tarefa.id !== id);
-    });
+  const concluirTarefa = async (id) => {
+    const resposta = await finalizarTarefa(id);
+    setTarefas((atuais) => atuais.filter((tarefa) => tarefa.id !== id));
+    setTarefasConcluidas((atuais) => [...atuais, resposta.tarefa]);
   };
 
-  const salvarPerfil = (dadosPerfil) => {
-    const perfilAtualizado = {
-      ...montarPerfilInicial(usuario, usuarioEmail),
-      ...perfil,
-      ...dadosPerfil,
-      email: usuarioEmail,
-    };
+  const salvarPerfil = async (dadosPerfil) => {
+    const resposta = await atualizarPerfil(dadosPerfil);
+    setPerfil(normalizarPerfil(resposta.perfil));
+    setUsuario((atual) => ({ ...atual, nome: resposta.perfil.nome }));
+    return resposta.perfil;
+  };
 
-    salvarJson(CHAVES_STORAGE.perfil, perfilAtualizado);
-    setPerfil(perfilAtualizado);
+  const fazerUploadPerfil = async (arquivo) => {
+    const resposta = await enviarImagemPerfil(arquivo);
+    setPerfil(normalizarPerfil(resposta.perfil));
+    return normalizarPerfil(resposta.perfil);
   };
 
   const valor = {
@@ -177,17 +176,21 @@ export function AppProvider({ children }) {
     alternarTema,
     token,
     usuario,
-    usuarioEmail,
-    estaAutenticado: Boolean(token),
+    usuarioEmail: usuario?.email || '',
+    estaAutenticado: Boolean(token && usuario),
+    inicializando,
+    erroGlobal,
     entrar,
     sair,
-    materias: MATERIAS,
+    materias,
     tarefas,
     tarefasConcluidas,
     adicionarTarefa,
     concluirTarefa,
     perfil,
     salvarPerfil,
+    fazerUploadPerfil,
+    recarregarDados: carregarDados,
   };
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;

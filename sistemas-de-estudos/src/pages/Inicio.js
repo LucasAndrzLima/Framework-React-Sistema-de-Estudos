@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 
 function Inicio() {
   const { perfil, tarefas, tarefasConcluidas, usuario } = useAppContext();
+  const nomeUsuario = perfil.nome || usuario?.nome || 'Estudante';
 
   const totalPendentes = tarefas.length;
   const totalConcluidas = tarefasConcluidas.length;
@@ -19,14 +20,14 @@ function Inicio() {
         <div>
           <h1>Pagina Inicial</h1>
           <p className="texto-apoio">
-            Ola, {perfil.nome || usuario}. Acompanhe seu progresso e as integracoes do projeto.
+            Ola, {nomeUsuario}. Acompanhe seu progresso e as integracoes do projeto.
           </p>
         </div>
 
         {perfil.imagem ? (
           <img
             src={perfil.imagem}
-            alt={`Foto de perfil de ${perfil.nome || usuario}`}
+            alt={`Foto de perfil de ${nomeUsuario}`}
             className="avatar-inicio"
           />
         ) : (
@@ -91,7 +92,7 @@ function Inicio() {
               <strong>API 2:</strong> Usuarios externos em <code>jsonplaceholder.typicode.com/users</code>
             </div>
             <div className="status-item">
-              <strong>Fallback:</strong> dados simulados quando API ou rede nao respondem.
+              <strong>Persistencia:</strong> tarefas e perfil salvos no backend em arquivo JSON.
             </div>
           </div>
         </div>

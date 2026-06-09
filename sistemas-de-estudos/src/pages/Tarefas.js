@@ -39,6 +39,8 @@ function Tarefas() {
   });
   const [erros, setErros] = useState({});
   const [mensagem, setMensagem] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [tarefaEmAndamento, setTarefaEmAndamento] = useState('');
 
   const atualizarCampo = ({ target }) => {
     const { name, value } = target;
@@ -54,38 +56,61 @@ function Tarefas() {
     setMensagem('');
   };
 
-  const enviarFormulario = (evento) => {
+  const enviarFormulario = async (evento) => {
     evento.preventDefault();
-
     const errosEncontrados = validarTarefa(novaTarefa);
 
     if (Object.keys(errosEncontrados).length > 0) {
       setErros(errosEncontrados);
-      setMensagem('');
       return;
     }
 
-    adicionarTarefa({
-      titulo: novaTarefa.titulo.trim(),
-      descricao: novaTarefa.descricao.trim(),
-      materia: novaTarefa.materia,
-    });
+    try {
+      setSalvando(true);
+      setMensagem('');
+      await adicionarTarefa({
+        titulo: novaTarefa.titulo.trim(),
+        descricao: novaTarefa.descricao.trim(),
+        materia: novaTarefa.materia,
+      });
 
-    setNovaTarefa({
-      titulo: '',
-      descricao: '',
-      materia: materias[0],
-    });
-    setErros({});
-    setMensagem('Tarefa adicionada com sucesso.');
+      setNovaTarefa({
+        titulo: '',
+        descricao: '',
+        materia: materias[0],
+      });
+      setErros({});
+      setMensagem('Tarefa persistida no servidor com sucesso.');
+    } catch (erro) {
+      setMensagem(erro.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const marcarComoConcluida = async (id) => {
+    try {
+      setTarefaEmAndamento(id);
+      setMensagem('');
+      await concluirTarefa(id);
+    } catch (erro) {
+      setMensagem(erro.message);
+    } finally {
+      setTarefaEmAndamento('');
+    }
   };
 
   return (
     <div>
-      <h1>Tarefas</h1>
-      <p className="texto-apoio">
-        O formulario valida os campos antes de atualizar o estado compartilhado da aplicacao.
-      </p>
+      <div className="pagina-titulo">
+        <div>
+          <h1>Tarefas</h1>
+          <p className="texto-apoio">
+            Cadastros e conclusoes sao persistidos no backend e protegidos pelo JWT.
+          </p>
+        </div>
+        <span className="selo-seguranca">Persistencia ativa</span>
+      </div>
 
       <div className="grid-duplo">
         <div className="card">
@@ -136,40 +161,55 @@ function Tarefas() {
               {erros.materia && <span className="erro-campo">{erros.materia}</span>}
             </div>
 
-            {mensagem && <p className="sucesso-geral">{mensagem}</p>}
+            {mensagem && (
+              <p className={mensagem.includes('sucesso') ? 'sucesso-geral' : 'erro-geral'}>
+                {mensagem}
+              </p>
+            )}
 
-            <button type="submit">Adicionar tarefa</button>
+            <button type="submit" disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Adicionar tarefa'}
+            </button>
           </form>
         </div>
 
-        <div className="card">
-          <h2>Resumo rapido</h2>
+        <div className="card resumo-operacional">
+          <h2>Resumo</h2>
           <div className="lista-status">
             <div className="status-item">
-              <strong>Pendentes:</strong> {tarefas.length}
+              <strong>Pendentes</strong>
+              <span>{tarefas.length}</span>
             </div>
             <div className="status-item">
-              <strong>Concluidas:</strong> {tarefasConcluidas.length}
+              <strong>Concluidas</strong>
+              <span>{tarefasConcluidas.length}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div>
+      <section aria-labelledby="titulo-pendentes">
+        <h2 id="titulo-pendentes" className="secao-titulo">Pendentes</h2>
         {tarefas.length === 0 ? (
-          <p>Nenhuma tarefa disponivel.</p>
+          <div className="estado-vazio">
+            <h3>Tudo em dia</h3>
+            <p>Cadastre uma nova tarefa para continuar seu planejamento.</p>
+          </div>
         ) : (
-          tarefas.map((tarefa) => (
-            <TarefaItem
-              key={tarefa.id}
-              titulo={tarefa.titulo}
-              descricao={tarefa.descricao}
-              materia={tarefa.materia}
-              onDelete={() => concluirTarefa(tarefa.id)}
-            />
-          ))
+          <div className="lista-tarefas">
+            {tarefas.map((tarefa) => (
+              <TarefaItem
+                key={tarefa.id}
+                titulo={tarefa.titulo}
+                descricao={tarefa.descricao}
+                materia={tarefa.materia}
+                carregando={tarefaEmAndamento === tarefa.id}
+                onDelete={() => marcarComoConcluida(tarefa.id)}
+              />
+            ))}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

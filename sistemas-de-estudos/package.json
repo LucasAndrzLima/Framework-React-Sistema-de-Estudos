@@ -9,7 +9,9 @@
     "react-scripts": "5.0.1"
   },
   "scripts": {
+    "install:backend": "cd backend && npm install",
     "start": "set NODE_OPTIONS=--openssl-legacy-provider && react-scripts start",
+    "start:backend": "cd backend && npm start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

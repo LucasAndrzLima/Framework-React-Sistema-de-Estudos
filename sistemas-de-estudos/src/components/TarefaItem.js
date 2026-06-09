@@ -1,6 +1,6 @@
 import React from 'react';
 
-function TarefaItem({ titulo, descricao, materia, onDelete }) {
+function TarefaItem({ titulo, descricao, materia, onDelete, carregando }) {
   return (
     <div className="card tarefa-card">
       <div className="tarefa-topo">
@@ -13,8 +13,8 @@ function TarefaItem({ titulo, descricao, materia, onDelete }) {
       </p>
 
       <div className="tarefa-acoes">
-        <button type="button" onClick={onDelete}>
-          Concluir
+        <button type="button" onClick={onDelete} disabled={carregando}>
+          {carregando ? 'Salvando...' : 'Concluir'}
         </button>
       </div>
     </div>

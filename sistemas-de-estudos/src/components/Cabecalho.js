@@ -23,7 +23,9 @@ function Cabecalho() {
         </div>
 
         <div className="cabecalho-acoes">
-          {estaAutenticado && <span className="cabecalho-usuario">Ola, {usuario}</span>}
+          {estaAutenticado && (
+            <span className="cabecalho-usuario">Ola, {usuario?.nome}</span>
+          )}
 
           <button
             type="button"

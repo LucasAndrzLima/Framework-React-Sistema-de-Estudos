@@ -1,80 +1,116 @@
-# Sistema de Estudos - RA2
+# Sistema de Estudos - RA3
 
-Aplicacao React para gerenciamento de estudos com foco em interatividade,
-formularios, gerenciamento de estado, consumo de APIs e separacao de
-responsabilidades.
+Entrega final de uma aplicacao React com backend Express, persistencia em arquivo
+JSON, autenticacao JWT, upload de imagem e interface responsiva.
 
-## O que foi evoluido para o RA2
+## Requisitos atendidos
 
-1. Formularios controlados com validacao no login, cadastro de tarefas e perfil.
-2. Gerenciamento de estado centralizado com `AppContext`.
-3. Consumo de API local de autenticacao em `http://localhost:3001/login`.
-4. Consumo de API externa em `https://jsonplaceholder.typicode.com/users`.
-5. Simulacao de dados quando a API externa, a rede ou o backend nao respondem.
-6. Estrutura de services em `src/services`.
-7. Perfil privado com upload de imagem, pre-visualizacao e limite de 1MB.
-8. Responsividade para desktop, tablet e celular.
+### Persistencia
+
+- Tarefas, perfil e usuario sao mantidos em `backend/data/database.json`.
+- O arquivo e criado automaticamente na primeira execucao.
+- Criar ou concluir uma tarefa grava a alteracao no backend.
+- Atualizar perfil ou imagem continua valido apos atualizar a pagina.
+
+### Seguranca
+
+- Login real em `POST /login`.
+- Senha armazenada como hash bcrypt.
+- JWT assinado com expiracao de duas horas.
+- Middleware valida `Authorization: Bearer TOKEN`.
+- Tarefas, perfil, upload e consulta dos estudos sao rotas privadas.
+- O token nao e enviado para APIs externas.
+
+### Upload
+
+- Envio por `multipart/form-data` com Multer.
+- Arquivos salvos em `backend/uploads`.
+- Aceita JPG, PNG e WEBP.
+- Limite de 2MB e nome de arquivo gerado pelo servidor.
+
+### Interface
+
+- Estados de carregamento, erro, sucesso e lista vazia.
+- Botoes bloqueados durante requisicoes.
+- Tema claro/escuro.
+- Layout responsivo para desktop, tablet e celular.
+- Indicadores visuais de persistencia e rota protegida.
 
 ## Como executar
 
-### Frontend
+Abra dois terminais dentro de `sistemas-de-estudos`.
 
-```bash
+Na primeira execucao, instale frontend e backend:
+
+```powershell
 npm install
+npm run install:backend
+```
+
+### Terminal 1 - backend
+
+```powershell
+npm run start:backend
+```
+
+O backend ficara em `http://localhost:3001`.
+
+### Terminal 2 - frontend
+
+```powershell
 npm start
 ```
 
-### Backend opcional
+O frontend ficara em `http://localhost:3000`.
 
-O backend demonstra a autenticacao real via HTTP. Se ele nao estiver rodando, o
-frontend usa um login simulado com as mesmas credenciais de demonstracao.
-
-```bash
-cd backend
-npm install
-npm start
-```
-
-## Login de demonstracao
+## Credenciais
 
 - E-mail: `admin@email.com`
 - Senha: `123456`
 
-## Estrutura principal
+## Endpoints
 
-```bash
-sistemas-de-estudos
-- backend
-  - server.js
-- src
-  - components
-  - context
-  - data
-  - pages
-  - services
-  - App.js
-  - Layout.js
-  - index.js
-  - style.css
-- package.json
+| Metodo | Rota | Protegida | Responsabilidade |
+| --- | --- | --- | --- |
+| GET | `/health` | Nao | Verificar se o backend esta ativo |
+| POST | `/login` | Nao | Autenticar e gerar JWT |
+| GET | `/api/session` | Sim | Validar token e restaurar sessao |
+| GET | `/api/estudos` | Sim | Buscar tarefas, perfil e materias |
+| POST | `/api/tarefas` | Sim | Persistir nova tarefa |
+| PATCH | `/api/tarefas/:id/concluir` | Sim | Concluir uma tarefa |
+| PUT | `/api/perfil` | Sim | Atualizar dados do perfil |
+| POST | `/api/perfil/imagem` | Sim | Fazer upload da imagem |
+
+## Estrutura
+
+```text
+backend/
+  data/              banco JSON gerado em execucao
+  src/database.js    leitura e escrita da persistencia
+  uploads/           imagens enviadas
+  server.js          API, JWT, middleware e rotas
+src/
+  components/        componentes reutilizaveis
+  context/           estado compartilhado e integracao
+  pages/             telas da aplicacao
+  services/          HTTP, autenticacao, estudos e storage
 ```
 
-## Justificativa tecnica
+## Variavel de seguranca
 
-- `AppContext` concentra estado global de autenticacao, tema, perfil e tarefas.
-- `localStorage` mantem a persistencia simples sem exigir banco de dados.
-- `services` separam as chamadas HTTP dos componentes visuais.
-- `authService` tenta a API local e usa fallback simulado para nao travar a apresentacao.
-- `userService` consome API externa e tambem retorna dados simulados se a rede falhar.
-- Formularios controlados com validacao melhoram usabilidade e previsibilidade.
-- Rotas privadas protegem as paginas internas apos o login.
-- CSS responsivo garante uso adequado em telas menores.
+Em desenvolvimento existe um segredo JWT padrao. Para trocar:
 
-## Pergunta tecnica possivel
+```powershell
+$env:JWT_SECRET="uma-chave-longa-e-secreta"
+npm run start:backend
+```
 
-**Por que separar chamadas de API em services em vez de usar `fetch` direto nas paginas?**
+Em producao o segredo nunca deve ficar no codigo ou no GitHub.
 
-Porque a pagina fica responsavel pela interface e pelos eventos do usuario,
-enquanto o service fica responsavel pela comunicacao externa. Isso reduz
-duplicacao, facilita manutencao, permite trocar API real por dados simulados e
-deixa o codigo mais testavel.
+## Validacao
+
+```powershell
+npm run build
+```
+
+O build de producao deve finalizar com `Compiled successfully`.

@@ -1,22 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 
-const TAMANHO_MAXIMO_IMAGEM = 1024 * 1024;
+const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
 const TIPOS_IMAGEM_ACEITOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 function validarPerfil(formulario) {
   const novosErros = {};
 
-  if (!formulario.nome.trim()) {
-    novosErros.nome = 'Informe o nome exibido no perfil.';
-  } else if (formulario.nome.trim().length < 3) {
-    novosErros.nome = 'O nome precisa ter pelo menos 3 caracteres.';
+  if (!formulario.nome.trim() || formulario.nome.trim().length < 3) {
+    novosErros.nome = 'Informe um nome com pelo menos 3 caracteres.';
   }
 
-  if (!formulario.objetivo.trim()) {
-    novosErros.objetivo = 'Descreva o objetivo de estudo.';
-  } else if (formulario.objetivo.trim().length < 10) {
-    novosErros.objetivo = 'O objetivo precisa ter pelo menos 10 caracteres.';
+  if (!formulario.objetivo.trim() || formulario.objetivo.trim().length < 10) {
+    novosErros.objetivo = 'Descreva o objetivo com pelo menos 10 caracteres.';
   }
 
   if (!formulario.materiaFavorita.trim()) {
@@ -26,24 +22,22 @@ function validarPerfil(formulario) {
   return novosErros;
 }
 
-function lerArquivoComoBase64(arquivo) {
-  return new Promise((resolve, reject) => {
-    const leitor = new FileReader();
-
-    leitor.onload = () => resolve(leitor.result);
-    leitor.onerror = () => reject(new Error('Nao foi possivel processar a imagem.'));
-    leitor.readAsDataURL(arquivo);
-  });
-}
-
 function Perfil() {
-  const { materias, perfil, salvarPerfil, usuarioEmail } = useAppContext();
+  const {
+    fazerUploadPerfil,
+    materias,
+    perfil,
+    salvarPerfil,
+    usuarioEmail,
+  } = useAppContext();
   const [formulario, setFormulario] = useState({
     ...perfil,
     email: usuarioEmail,
   });
+  const [arquivoImagem, setArquivoImagem] = useState(null);
   const [erros, setErros] = useState({});
   const [mensagem, setMensagem] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     setFormulario({
@@ -52,93 +46,99 @@ function Perfil() {
     });
   }, [perfil, usuarioEmail]);
 
+  // URL temporaria usada somente para mostrar a imagem antes do upload.
+  const imagemPreview = useMemo(() => {
+    if (arquivoImagem) {
+      return URL.createObjectURL(arquivoImagem);
+    }
+
+    return formulario.imagem;
+  }, [arquivoImagem, formulario.imagem]);
+
+  useEffect(() => {
+    return () => {
+      if (imagemPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagemPreview);
+      }
+    };
+  }, [imagemPreview]);
+
   const atualizarCampo = ({ target }) => {
     const { name, value } = target;
-
-    setFormulario((valorAtual) => ({
-      ...valorAtual,
-      [name]: value,
-    }));
-    setErros((valorAtual) => ({
-      ...valorAtual,
-      [name]: '',
-    }));
+    setFormulario((valorAtual) => ({ ...valorAtual, [name]: value }));
+    setErros((valorAtual) => ({ ...valorAtual, [name]: '' }));
     setMensagem('');
   };
 
-  const atualizarImagem = async ({ target }) => {
+  const selecionarImagem = ({ target }) => {
     const arquivo = target.files?.[0];
 
-    if (!arquivo) {
-      return;
-    }
+    if (!arquivo) return;
 
     if (!TIPOS_IMAGEM_ACEITOS.includes(arquivo.type)) {
-      setErros((valorAtual) => ({
-        ...valorAtual,
+      setErros((atuais) => ({
+        ...atuais,
         imagem: 'Use uma imagem JPG, PNG ou WEBP.',
       }));
-      setMensagem('');
       return;
     }
 
     if (arquivo.size > TAMANHO_MAXIMO_IMAGEM) {
-      setErros((valorAtual) => ({
-        ...valorAtual,
-        imagem: 'A imagem deve ter no maximo 1MB.',
+      setErros((atuais) => ({
+        ...atuais,
+        imagem: 'A imagem deve ter no maximo 2MB.',
       }));
-      setMensagem('');
       return;
     }
 
-    try {
-      const imagemBase64 = await lerArquivoComoBase64(arquivo);
-
-      setFormulario((valorAtual) => ({
-        ...valorAtual,
-        imagem: imagemBase64,
-      }));
-      setErros((valorAtual) => ({
-        ...valorAtual,
-        imagem: '',
-      }));
-      setMensagem('');
-    } catch (erro) {
-      setMensagem(erro.message);
-    }
+    setArquivoImagem(arquivo);
+    setErros((atuais) => ({ ...atuais, imagem: '' }));
+    setMensagem('');
   };
 
-  const enviarFormulario = (evento) => {
+  const enviarFormulario = async (evento) => {
     evento.preventDefault();
-
     const errosEncontrados = validarPerfil(formulario);
 
     if (Object.keys(errosEncontrados).length > 0) {
       setErros(errosEncontrados);
-      setMensagem('');
       return;
     }
 
     try {
-      salvarPerfil({
+      setSalvando(true);
+      setMensagem('');
+
+      await salvarPerfil({
         nome: formulario.nome.trim(),
         objetivo: formulario.objetivo.trim(),
         materiaFavorita: formulario.materiaFavorita,
-        imagem: formulario.imagem,
       });
 
-      setMensagem('Perfil salvo com sucesso.');
+      if (arquivoImagem) {
+        await fazerUploadPerfil(arquivoImagem);
+        setArquivoImagem(null);
+      }
+
+      setMensagem('Perfil e imagem persistidos com sucesso.');
     } catch (erro) {
-      setMensagem('Nao foi possivel salvar o perfil. Use uma imagem de ate 1MB.');
+      setMensagem(erro.message);
+    } finally {
+      setSalvando(false);
     }
   };
 
   return (
     <div>
-      <h1>Perfil privado</h1>
-      <p className="texto-apoio">
-        Esta rota privada concentra um formulario validado e upload de imagem com pre-visualizacao.
-      </p>
+      <div className="pagina-titulo">
+        <div>
+          <h1>Perfil</h1>
+          <p className="texto-apoio">
+            Dados protegidos por JWT e imagem armazenada no servidor.
+          </p>
+        </div>
+        <span className="selo-seguranca">Rota protegida</span>
+      </div>
 
       <div className="grid-duplo">
         <div className="card">
@@ -151,7 +151,6 @@ function Perfil() {
                 id="nome"
                 name="nome"
                 type="text"
-                placeholder="Digite seu nome"
                 value={formulario.nome}
                 onChange={atualizarCampo}
               />
@@ -159,13 +158,9 @@ function Perfil() {
             </div>
 
             <div className="campo-formulario">
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                type="email"
-                value={formulario.email || ''}
-                readOnly
-              />
+              <label htmlFor="email">E-mail da conta</label>
+              <input id="email" type="email" value={formulario.email || ''} readOnly />
+              <span className="ajuda-campo">O e-mail vem da identidade presente no JWT.</span>
             </div>
 
             <div className="campo-formulario">
@@ -173,13 +168,10 @@ function Perfil() {
               <textarea
                 id="objetivo"
                 name="objetivo"
-                placeholder="Ex.: Melhorar meu desempenho em programacao e organizacao."
                 value={formulario.objetivo}
                 onChange={atualizarCampo}
               />
-              {erros.objetivo && (
-                <span className="erro-campo">{erros.objetivo}</span>
-              )}
+              {erros.objetivo && <span className="erro-campo">{erros.objetivo}</span>}
             </div>
 
             <div className="campo-formulario">
@@ -191,14 +183,9 @@ function Perfil() {
                 onChange={atualizarCampo}
               >
                 {materias.map((materia) => (
-                  <option key={materia} value={materia}>
-                    {materia}
-                  </option>
+                  <option key={materia} value={materia}>{materia}</option>
                 ))}
               </select>
-              {erros.materiaFavorita && (
-                <span className="erro-campo">{erros.materiaFavorita}</span>
-              )}
             </div>
 
             <div className="campo-formulario">
@@ -207,10 +194,10 @@ function Perfil() {
                 id="imagem"
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp"
-                onChange={atualizarImagem}
+                onChange={selecionarImagem}
               />
-              <span className="texto-apoio">
-                Formatos aceitos: JPG, PNG e WEBP com ate 1MB.
+              <span className="ajuda-campo">
+                JPG, PNG ou WEBP. Limite de 2MB. O upload ocorre ao salvar.
               </span>
               {erros.imagem && <span className="erro-campo">{erros.imagem}</span>}
             </div>
@@ -221,50 +208,31 @@ function Perfil() {
               </p>
             )}
 
-            <div className="acoes-formulario">
-              <button type="submit">Salvar perfil</button>
-
-              {formulario.imagem && (
-                <button
-                  type="button"
-                  className="botao-secundario"
-                  onClick={() => {
-                    setFormulario((valorAtual) => ({
-                      ...valorAtual,
-                      imagem: '',
-                    }));
-                    setErros((valorAtual) => ({
-                      ...valorAtual,
-                      imagem: '',
-                    }));
-                    setMensagem('');
-                  }}
-                >
-                  Remover imagem
-                </button>
-              )}
-            </div>
+            <button type="submit" disabled={salvando}>
+              {salvando ? 'Salvando no servidor...' : 'Salvar perfil'}
+            </button>
           </form>
         </div>
 
         <div className="card">
           <h2>Pre-visualizacao</h2>
-
           <div className="perfil-preview">
-            {formulario.imagem ? (
+            {imagemPreview ? (
               <img
-                src={formulario.imagem}
-                alt={`Pre-visualizacao do perfil de ${formulario.nome || 'usuario'}`}
+                src={imagemPreview}
+                alt={`Perfil de ${formulario.nome || 'usuario'}`}
                 className="perfil-imagem"
               />
             ) : (
-              <div className="perfil-placeholder">Sem imagem enviada</div>
+              <div className="perfil-placeholder">Sem imagem</div>
             )}
 
-            <h3>{formulario.nome || 'Seu nome aparecera aqui'}</h3>
-            <p><strong>E-mail:</strong> {formulario.email || '---'}</p>
-            <p><strong>Materia favorita:</strong> {formulario.materiaFavorita}</p>
-            <p>{formulario.objetivo || 'Seu objetivo de estudo aparecera nesta area.'}</p>
+            <div>
+              <h3>{formulario.nome || 'Nome do estudante'}</h3>
+              <p><strong>E-mail:</strong> {formulario.email || '---'}</p>
+              <p><strong>Materia favorita:</strong> {formulario.materiaFavorita}</p>
+              <p>{formulario.objetivo || 'Defina seu objetivo de estudo.'}</p>
+            </div>
           </div>
         </div>
       </div>

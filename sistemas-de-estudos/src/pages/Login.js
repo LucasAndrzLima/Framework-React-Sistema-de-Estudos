@@ -64,7 +64,7 @@ function Login() {
       <div className="card login-card">
         <h1>Login</h1>
         <p className="texto-apoio">
-          Acesso autenticado pela API local, com modo simulado caso o backend nao esteja aberto.
+          Entre com uma sessao JWT valida para acessar seus dados persistidos.
         </p>
 
         <form className="formulario" onSubmit={fazerLogin}>
@@ -125,7 +125,9 @@ function Login() {
           </button>
         </form>
 
-        <p className="dica-formulario">Use: admin@email.com / 123456</p>
+        <p className="dica-formulario">
+          Demonstracao: admin@email.com / 123456. O backend deve estar em execucao.
+        </p>
       </div>
     </div>
   );
